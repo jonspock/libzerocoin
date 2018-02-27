@@ -77,6 +77,7 @@ public:
 
     CBigNum& operator=(const CBigNum& b)
     {
+        BN_init(this);
         if (!BN_copy(this, &b))
             throw bignum_error("CBigNum::operator= : BN_copy failed");
         return (*this);
