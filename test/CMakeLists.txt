@@ -17,5 +17,8 @@ set_property(TARGET benchmark PROPERTY CXX_STANDARD 11)
 
 add_test(NAME benchmark COMMAND benchmark)
 
+add_executable(test_p test_proveSOK.cpp)
+target_link_libraries(test_p zerocoin coin gmp ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES} pthread)
+set_property(TARGET test_p PROPERTY CXX_STANDARD 11)
 
 

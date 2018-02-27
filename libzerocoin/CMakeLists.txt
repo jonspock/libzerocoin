@@ -23,6 +23,8 @@ list(APPEND zerocoin_libs
   ${OPENSSL_LIBRARIES}
 )
 
+add_subdirectory(matrix)
+
 FILE(GLOB ZEROCOIN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 #
@@ -38,6 +40,7 @@ list(APPEND zerocoin_sources
   ZerocoinParams.cpp
   SerialNumberSignatureOfKnowledge.cpp
   AccumulatorProofOfKnowledge.cpp
+  IntegerMod.cpp
 )
 
 add_library(zerocoin ${ZEROCOIN_HEADERS} ${zerocoin_sources})
