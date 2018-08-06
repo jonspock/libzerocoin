@@ -36,6 +36,7 @@ list(APPEND zerocoin_sources
   PrivateCoin.cpp
   Denominations.cpp
   CoinSpend.cpp
+  IntegerMod.cpp
   CommitmentProofOfKnowledge.cpp
   ZerocoinParams.cpp
   SerialNumberSignatureOfKnowledge.cpp

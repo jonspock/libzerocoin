@@ -1,7 +1,8 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin developers
 // Copyright (c) 2014-2015 The Dash developers
-// Copyright (c) 2015-2017 The PIVX developers
+// Copyright (c) 2015-2018 The PIVX developers
+// Copyright (c) 2018 The ClubChain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -9,14 +10,15 @@
  * Server/client environment: argument handling, config file parsing,
  * logging, thread wrappers
  */
-#ifndef BITCOIN_UTIL_H
-#define BITCOIN_UTIL_H
+#pragma once
 
 #if defined(HAVE_CONFIG_H)
-#include "config/pivx-config.h"
+#include "club-config.h"
 #endif
 
 #include "compat.h"
+#include "fs.h"
+#include "logging.h"
 #include "tinyformat.h"
 #include "utiltime.h"
 
@@ -26,115 +28,58 @@
 #include <string>
 #include <vector>
 
-#include <boost/filesystem/path.hpp>
 #include <boost/thread/exceptions.hpp>
 
-//PIVX only features
+#include "sync.h"
+#include <unordered_set>
 
-extern bool fMasterNode;
-extern bool fLiteMode;
-extern bool fEnableSwiftTX;
-extern int nSwiftTXDepth;
-extern int nZeromintPercentage;
-extern const int64_t AUTOMINT_DELAY;
-extern int nPreferredDenom;
-extern int nAnonymizePivxAmount;
-extern int nLiquidityProvider;
-extern bool fEnableZeromint;
-extern int64_t enforceMasternodePaymentsTime;
-extern std::string strMasterNodeAddr;
-extern int keysLoaded;
-extern bool fSucessfullyLoaded;
-extern std::vector<int64_t> obfuScationDenominations;
-extern std::string strBudgetMode;
+// Club only features
 
-extern std::map<std::string, std::string> mapArgs;
-extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
-extern bool fDebug;
-extern bool fPrintToConsole;
-extern bool fPrintToDebugLog;
-extern bool fServer;
 extern std::string strMiscWarning;
-extern bool fLogTimestamps;
-extern bool fLogIPs;
-extern volatile bool fReopenDebugLog;
+
+/**
+ * Bypass Translation function: Retrofit if needed to use translation later
+ */
+inline std::string _(const char* psz) { return psz; }
 
 void SetupEnvironment();
+bool SetupNetworking();
 
-/** Return true if log accepts specified category */
-bool LogAcceptCategory(const char* category);
-/** Send a string to the log output */
-int LogPrintStr(const std::string& str);
-
-#define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
-
-/**
- * When we switch to C++11, this can be switched to variadic templates instead
- * of this macro-based construction (see tinyformat.h).
- */
-#define MAKE_ERROR_AND_LOG_FUNC(n)                                                              \
-    /**   Print to debug.log if -debug=category switch is given OR category is NULL. */         \
-    template <TINYFORMAT_ARGTYPES(n)>                                                           \
-    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n)) \
-    {                                                                                           \
-        if (!LogAcceptCategory(category)) return 0;                                             \
-        return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n)));                        \
-    }                                                                                           \
-    /**   Log error and return false */                                                         \
-    template <TINYFORMAT_ARGTYPES(n)>                                                           \
-    static inline bool error(const char* format, TINYFORMAT_VARARGS(n))                         \
-    {                                                                                           \
-        LogPrintStr(std::string("ERROR: ") + tfm::format(format, TINYFORMAT_PASSARGS(n)) + "\n");            \
-        return false;                                                                           \
-    }
-
-TINYFORMAT_FOREACH_ARGNUM(MAKE_ERROR_AND_LOG_FUNC)
-
-/**
- * Zero-arg versions of logging and error, these are not covered by
- * TINYFORMAT_FOREACH_ARGNUM
- */
-static inline int LogPrint(const char* category, const char* format)
-{
-    if (!LogAcceptCategory(category)) return 0;
-    return LogPrintStr(format);
-}
-static inline bool error(const char* format)
-{
-    LogPrintStr(std::string("ERROR: ") + format + "\n");
-    return false;
+template <typename... Args> bool error(const char* fmt, const Args&... args) {
+  LogPrintf("ERROR: " + tfm::format(fmt, args...) + "\n");
+  return false;
 }
 
+double double_safe_addition(double fValue, double fIncrement);
+double double_safe_multiplication(double fValue, double fmultiplicator);
 void PrintExceptionContinue(std::exception* pex, const char* pszThread);
 void ParseParameters(int argc, const char* const argv[]);
 void FileCommit(FILE* fileout);
 bool TruncateFile(FILE* file, unsigned int length);
 int RaiseFileDescriptorLimit(int nMinFD);
 void AllocateFileRange(FILE* file, unsigned int offset, unsigned int length);
-bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest);
-bool TryCreateDirectory(const boost::filesystem::path& p);
-boost::filesystem::path GetDefaultDataDir();
-const boost::filesystem::path& GetDataDir(bool fNetSpecific = true);
-boost::filesystem::path GetConfigFile();
-boost::filesystem::path GetMasternodeConfigFile();
+bool RenameOver(fs::path src, fs::path dest);
+bool TryCreateDirectory(const fs::path& p);
+fs::path GetDefaultDataDir();
+const fs::path& GetDataDir(bool fNetSpecific = true);
+fs::path GetConfigFile();
 #ifndef WIN32
-boost::filesystem::path GetPidFile();
-void CreatePidFile(const boost::filesystem::path& path, pid_t pid);
+fs::path GetPidFile();
+void CreatePidFile(const fs::path& path, pid_t pid);
 #endif
-void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
+void ReadConfigFile();
 #ifdef WIN32
-boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
+fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-boost::filesystem::path GetTempPath();
+fs::path GetTempPath();
 void ShrinkDebugFile();
 void runCommand(std::string strCommand);
 
-inline bool IsSwitchChar(char c)
-{
+inline bool IsSwitchChar(char c) {
 #ifdef WIN32
-    return c == '-' || c == '/';
+  return c == '-' || c == '/';
 #else
-    return c == '-';
+  return c == '-';
 #endif
 }
 
@@ -183,63 +128,136 @@ bool SoftSetArg(const std::string& strArg, const std::string& strValue);
  */
 bool SoftSetBoolArg(const std::string& strArg, bool fValue);
 
+/**
+ * Format a string to be used as group of options in help messages
+ *
+ * @param message Group name (e.g. "RPC server options:")
+ * @return the formatted string
+ */
+std::string HelpMessageGroup(const std::string& message);
+
+/**
+ * Format a string to be used as option description in help messages
+ *
+ * @param option Option message (e.g. "-rpcuser=<user>")
+ * @param message Option description (e.g. "Username for JSON-RPC connections")
+ * @return the formatted string
+ */
+std::string HelpMessageOpt(const std::string& option, const std::string& message);
+
 void SetThreadPriority(int nPriority);
 void RenameThread(const char* name);
 
 /**
- * Standard wrapper for do-something-forever thread functions.
- * "Forever" really means until the thread is interrupted.
- * Use it like:
- *   new boost::thread(boost::bind(&LoopForever<void (*)()>, "dumpaddr", &DumpAddresses, 900000));
- * or maybe:
- *    boost::function<void()> f = boost::bind(&FunctionWithArg, argument);
- *    threadGroup.create_thread(boost::bind(&LoopForever<boost::function<void()> >, "nothing", f, milliseconds));
- */
-template <typename Callable>
-void LoopForever(const char* name, Callable func, int64_t msecs)
-{
-    std::string s = strprintf("pivx-%s", name);
-    RenameThread(s.c_str());
-    LogPrintf("%s thread start\n", name);
-    try {
-        while (1) {
-            MilliSleep(msecs);
-            func();
-        }
-    } catch (boost::thread_interrupted) {
-        LogPrintf("%s thread stop\n", name);
-        throw;
-    } catch (std::exception& e) {
-        PrintExceptionContinue(&e, name);
-        throw;
-    } catch (...) {
-        PrintExceptionContinue(NULL, name);
-        throw;
-    }
-}
-
-/**
  * .. and a wrapper that just calls func once
  */
-template <typename Callable>
-void TraceThread(const char* name, Callable func)
-{
-    std::string s = strprintf("pivx-%s", name);
-    RenameThread(s.c_str());
-    try {
-        LogPrintf("%s thread start\n", name);
-        func();
-        LogPrintf("%s thread exit\n", name);
-    } catch (boost::thread_interrupted) {
-        LogPrintf("%s thread interrupt\n", name);
-        throw;
-    } catch (std::exception& e) {
-        PrintExceptionContinue(&e, name);
-        throw;
-    } catch (...) {
-        PrintExceptionContinue(NULL, name);
-        throw;
-    }
+template <typename Callable> void TraceThread(const char* name, Callable func) {
+  std::string s = strprintf("club-%s", name);
+  RenameThread(s.c_str());
+  try {
+    LogPrintf("%s thread start\n", name);
+    func();
+    LogPrintf("%s thread exit\n", name);
+  } catch (boost::thread_interrupted) {
+    LogPrintf("%s thread interrupt\n", name);
+    throw;
+  } catch (std::exception& e) {
+    PrintExceptionContinue(&e, name);
+    throw;
+  } catch (...) {
+    PrintExceptionContinue(nullptr, name);
+    throw;
+  }
 }
 
-#endif // BITCOIN_UTIL_H
+class ArgsManager {
+ protected:
+  mutable CCriticalSection cs_args;
+  std::map<std::string, std::string> mapArgs;
+  std::map<std::string, std::vector<std::string> > mapMultiArgs;
+  std::unordered_set<std::string> m_negated_args;
+
+ public:
+  void ParseParameters(int argc, const char* const argv[]);
+  void ReadConfigFile();
+
+  /**
+   * Return a vector of strings of the given argument
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @return command-line arguments
+   */
+  std::vector<std::string> GetArgs(const std::string& strArg) const;
+
+  /**
+   * Return true if the given argument has been manually set
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @return true if the argument has been set
+   */
+  bool IsArgSet(const std::string& strArg) const;
+
+  /**
+   * Return true if the argument was originally passed as a negated option,
+   * i.e. -nofoo.
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @return true if the argument was passed negated
+   */
+  bool IsArgNegated(const std::string& strArg) const;
+
+  /**
+   * Return string argument or default value
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @param strDefault (e.g. "1")
+   * @return command-line argument or default value
+   */
+  std::string GetArg(const std::string& strArg, const std::string& strDefault) const;
+
+  /**
+   * Return integer argument or default value
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @param nDefault (e.g. 1)
+   * @return command-line argument (0 if invalid number) or default value
+   */
+  int64_t GetArg(const std::string& strArg, int64_t nDefault) const;
+
+  /**
+   * Return boolean argument or default value
+   *
+   * @param strArg Argument to get (e.g. "-foo")
+   * @param fDefault (true or false)
+   * @return command-line argument or default value
+   */
+  bool GetBoolArg(const std::string& strArg, bool fDefault) const;
+
+  /**
+   * Set an argument if it doesn't already have a value
+   *
+   * @param strArg Argument to set (e.g. "-foo")
+   * @param strValue Value (e.g. "1")
+   * @return true if argument gets set, false if it already had a value
+   */
+  bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+
+  /**
+   * Set a boolean argument if it doesn't already have a value
+   *
+   * @param strArg Argument to set (e.g. "-foo")
+   * @param fValue Value (e.g. false)
+   * @return true if argument gets set, false if it already had a value
+   */
+  bool SoftSetBoolArg(const std::string& strArg, bool fValue);
+
+  // Forces an arg setting. Called by SoftSetArg() if the arg hasn't already
+  // been set. Also called directly in testing.
+  void ForceSetArg(const std::string& strArg, const std::string& strValue);
+
+ private:
+  // Munge -nofoo into -foo=0 and track the value as negated.
+  void InterpretNegatedOption(std::string& key, std::string& val);
+};
+
+extern ArgsManager gArgs;

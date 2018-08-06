@@ -9,65 +9,44 @@
  * @copyright  Copyright 2013 Ian Miers, Christina Garman and Matthew Green
  *  license    This project is released under the MIT license.
  **/
-// Copyright (c) 2018 The PIVX developers
+// Copyright (c) 2018 The PIVX developer
+// Copyright (c) 2018 The ClubChain developers
 #pragma once
+#include "IntegerMod.h"
+#include "ModulusType.h"
 #include "ZerocoinParams.h"
 #include "serialize.h"
-#include "ModulusType.h"
-#include "IntegerMod.h"
 namespace libzerocoin {
 
 /**
- * A commitment, complete with contents and opening randomness.
+ * A commitment, complete with serial and opening randomness.
  * These should remain secret. Publish only the commitment value.
  */
 class Commitment {
-public:
+ public:
   Commitment(const CBigNum& r, const CBigNum& v, const CBigNum c) {
     randomness = r;
-    contents = v;
+    serial = v;
     commitmentValue = c;
   }
-	const CBigNum& getCommitmentValue() const { return this->commitmentValue; }
+  const CBigNum& getCommitmentValue() const { return this->commitmentValue; }
   const CBigNum& getRandomness() const { return this->randomness; }
-	const CBigNum& getContents() const { return this->contents; }
+  const CBigNum& getSerial() const { return this->serial; }
 
  private:
-	CBigNum commitmentValue;
-	CBigNum randomness;
-  CBigNum contents;
+  CBigNum commitmentValue;
+  CBigNum randomness;
+  CBigNum serial;
 
-	ADD_SERIALIZE_METHODS;
-  template <typename Stream, typename Operation>  inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-	    READWRITE(commitmentValue);
-	    READWRITE(randomness);
-	    READWRITE(contents);
-	}
-public:
-
-};
-
-
-  /// This is now a free function instead of a member function
-
-  /** Generates a Pedersen commitment to the given value.
-   *
-   * @param g1 the g value
-   * @param h1 the h value
-   * @param value the value to commit to
-   */
-  template <ModulusType T, ModulusType G> Commitment commit(const CBigNum& g1, const CBigNum& h1, const CBigNum& value) {
-    const IntegerMod<T> g(g1);
-    const IntegerMod<T> h(h1);
-    CBigNum m = IntegerModModulus<T>::getModulus();
-    CBigNum r = CBigNum::randBignum(m);
-    
-    /// \f$ commitment = g^{value} * h^{randomness} \f$
-    CBigNum commitmentValue = ((g^value)*(h^r)).getValue();
-    Commitment commit(r, value, commitmentValue);
-    return commit;
+  ADD_SERIALIZE_METHODS;
+  template <typename Stream, typename Operation>
+  inline void SerializationOp(Stream& s, Operation ser_action) {
+    READWRITE(commitmentValue);
+    READWRITE(randomness);
+    READWRITE(serial);
   }
 
+ public:
+};
 
-  
 } /* namespace libzerocoin */

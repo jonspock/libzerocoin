@@ -35,7 +35,7 @@ void ProveSOK_Step2(
     //////////////////////////////////////////////////////////////////////
     ///Step 2 - Challenge Component and evaluate w polynomials ////////////
     //////////////////////////////////////////////////////////////////////
-    CHashWriter h(0, 0);
+    CHashWriter h;
     h << message << ComD;
     for (size_t i = 0; i < m; i++)
         h << ComA[i] << ComB[i] << ComC[i];

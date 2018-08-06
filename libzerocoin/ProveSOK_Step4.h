@@ -56,7 +56,7 @@ void ProveSOK_Step4(
     ///Step 4 - Challenge component ///////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
 
-    CHashWriter hh(0, 0);
+    CHashWriter hh;
     hh << U;
     for (size_t i = 0; i < Tf.size(); i++)
         hh << Tf[i];

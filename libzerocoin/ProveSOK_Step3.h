@@ -117,7 +117,7 @@ void ProveSOK_Step3(
 
     for (size_t k = -3 * m; k < 4 * m + 3; k++) {
         IntegerMod<T_> tcoef(0);
-        for (size_t i = max(k - 2 * m - 1, -m); i < min(k + 2 * m, 2 * m + 1) + 1; i++) {
+        for (size_t i = std::max(k - 2 * m - 1, -m); i < std::min(k + 2 * m, 2 * m + 1) + 1; i++) {
             int j = k - i;
             tcoef += DotProduct<T_>(rPoly.get_row(i), rDashPoly.get_row(j));
         }

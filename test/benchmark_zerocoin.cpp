@@ -78,7 +78,7 @@ bool Test_ParamGen()
     try {
         timer.start();
         // Instantiating testParams runs the parameter generation code
-        ZerocoinParams testParams(GetTestModulus(), ZEROCOIN_DEFAULT_SECURITYLEVEL);
+        ZerocoinParams testParams(ZEROCOIN_DEFAULT_SECURITYLEVEL);
         timer.stop();
 
         cout << "\tPARAMGEN ELAPSED TIME: " << timer.duration() << " ms\t" << timer.duration() * 0.001 << " s ";
@@ -145,7 +145,7 @@ bool Test_MintCoin()
         // Generate a list of coins
         timer.start();
         for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) 
-            global_Coins[i] = new PrivateCoin(global__Params, CoinDenomination::ZQ_ONE);
+            global_Coins[i] = new PrivateCoin(global__Params);
 
         timer.stop();
     } catch (exception& e) {
@@ -202,7 +202,8 @@ bool Test_MintAndSpend()
 
         // Now spend the coin
         timer.start();
-        CoinSpend spend(global__Params, *(global_Coins[0]), acc, 0, wAcc, 0); //(0) presstab
+        uint256 ptxHash(uint256S("0"));
+        CoinSpend spend(global__Params, *(global_Coins[0]), acc, 0, wAcc, ptxHash);
         timer.stop();
 
         cout << "\tSPEND ELAPSED TIME: " << timer.duration() << " ms\t" << timer.duration() * 0.001 << " s" << endl;
@@ -237,7 +238,7 @@ bool Test_MintAndSpend()
 void Test_RunAllTests()
 {
     // Make a new set of parameters from a random RSA modulus
-    global__Params = new ZerocoinParams(GetTestModulus());
+    global__Params = new ZerocoinParams();
 
     global_NumTests = global_SuccessfulTests = 0;
     for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) {
