@@ -90,6 +90,20 @@ if (GMP_FOUND)
 endif()
 
 
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/secp256k1/src/libsecp256k1-config.h")
+  message(STATUS "Found libsecp256k1-config.h")
+else()	
+  message(STATUS "Creating libsecp256k1-config.h")
+	execute_process(
+		COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/secp256k1/configure --enable-module-recovery
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/secp256k1
+		)
+	execute_process(
+		COMMAND make
+		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/secp256k1
+		)
+endif()
+
 find_package( Boost COMPONENTS system filesystem )
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
