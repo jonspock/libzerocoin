@@ -18,6 +18,7 @@
 #include "libzerocoin/Denominations.h"
 #include "libzerocoin/ParamGeneration.h"
 #include "streams.h"
+#include "random.h"
 #include <cstdlib>
 #include <exception>
 #include <fstream>
@@ -27,7 +28,7 @@
 using namespace std;
 using namespace libzerocoin;
 
-#define TESTS_COINS_TO_ACCUMULATE 5
+#define TESTS_COINS_TO_ACCUMULATE 50
 
 // Global test counters
 uint32_t global_NumTests = 0;
@@ -144,8 +145,12 @@ bool Test_MintCoin()
     try {
         // Generate a list of coins
         timer.start();
-        for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) 
+        for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) {
             global_Coins[i] = new PrivateCoin(global__Params);
+            std::string seed = to_string(i);
+            uint512 s(uint512S(seed));
+            global_Coins[i]->CoinFromSeed(s);
+        }
 
         timer.stop();
     } catch (exception& e) {
@@ -237,6 +242,8 @@ bool Test_MintAndSpend()
 
 void Test_RunAllTests()
 {
+    RandomInit();
+    ECC_Start();
     // Make a new set of parameters from a random RSA modulus
     global__Params = new ZerocoinParams();
 
