@@ -67,8 +67,6 @@ class AccumulatorWitness {
    */
   AccumulatorWitness& operator+=(const PublicCoin& rhs);
 
-  AccumulatorWitness& operator=(AccumulatorWitness rhs);
-
  private:
   Accumulator witness;
   PublicCoin element;  // was const but changed to use setting in assignment

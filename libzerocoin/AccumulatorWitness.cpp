@@ -45,11 +45,4 @@ AccumulatorWitness& AccumulatorWitness::operator+=(const PublicCoin& rhs) {
   return *this;
 }
 
-AccumulatorWitness& AccumulatorWitness::operator=(AccumulatorWitness rhs) {
-  // Not pretty, but seems to work (SPOCK)
-  if (&witness != &rhs.witness) this->witness = rhs.witness;
-  if (&element != &rhs.element) std::swap(element, rhs.element);
-  return *this;
-}
-
 } /* namespace libzerocoin */

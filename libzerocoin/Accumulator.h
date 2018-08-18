@@ -85,7 +85,6 @@ class Accumulator {
    * @return a refrence to the updated accumulator.
    */
   Accumulator& operator+=(const PublicCoin& c);
-  Accumulator& operator=(Accumulator rhs);
   bool operator==(const Accumulator rhs) const;
   ADD_SERIALIZE_METHODS;
   template <typename Stream, typename Operation>

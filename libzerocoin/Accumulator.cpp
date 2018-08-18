@@ -73,11 +73,6 @@ Accumulator& Accumulator::operator+=(const PublicCoin& c) {
   return *this;
 }
 
-Accumulator& Accumulator::operator=(Accumulator rhs) {
-  if (this != &rhs) std::swap(*this, rhs);
-  return *this;
-}
-
 bool Accumulator::operator==(const Accumulator rhs) const { return this->value == rhs.value; }
 
 } /* namespace libzerocoin */
