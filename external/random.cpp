@@ -4,7 +4,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "random.h"
-
+#include "rand_bignum.h"
+#include "libzerocoin/bignum.h"
 #include "sha512.h"
 #include "support/cleanse.h"
 #ifdef WIN32
@@ -44,7 +45,7 @@
 #include <cpuid.h>
 #endif
 
-#include <openssl/err.h>
+// For RAND_add and RAND_bytes
 #include <openssl/rand.h>
 
 [[noreturn]] static void RandFailure() {
@@ -83,7 +84,7 @@ static constexpr uint32_t CPUID_F1_ECX_RDRAND = 0x40000000;
 static void RDRandInit() {
     uint32_t eax, ebx, ecx, edx;
     if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_F1_ECX_RDRAND)) {
-      //        LogPrintf("Using RdRand as an additional entropy source\n");
+      //LogPrintf("Using RdRand as an additional entropy source\n");
         rdrand_supported = true;
     }
     hwrand_initialized.store(true);
@@ -468,3 +469,52 @@ FastRandomContext::FastRandomContext(bool fDeterministic)
 void RandomInit() {
     RDRandInit();
 }
+
+/** Generates a cryptographically secure random number between zero and range exclusive
+ * i.e. 0 < returned number < range
+ * @param range The upper bound on the number.
+ * @return
+ */
+CBigNum randBignum(const CBigNum& range) {
+  size_t size = (mpz_sizeinbase (range.bn, 2) + CHAR_BIT-1) / CHAR_BIT;
+  std::vector<unsigned char> buf(size);
+
+  RandAddSeed();
+  GetRandBytes(buf.data(), size);
+
+  CBigNum ret(buf);
+  if (ret < 0)
+    mpz_neg(ret.bn, ret.bn);
+  return ret;
+}
+
+/** Generates a cryptographically secure random k-bit number
+ * @param k The bit length of the number.
+ * @return
+ */
+CBigNum RandKBitBigum(const uint32_t k){
+  std::vector<unsigned char> buf((k+7)/8);
+
+  RandAddSeed();
+  GetRandBytes(buf.data(), (k+7)/8);
+
+  CBigNum ret(buf);
+  if (ret < 0)
+    mpz_neg(ret.bn, ret.bn);
+  return ret;
+  
+}
+
+/**
+ * Generates a random (safe) prime of numBits bits
+ * @param numBits the number of bits
+ * @param safe true for a safe prime
+ * @return the prime
+ */
+CBigNum generatePrime(const unsigned int numBits, bool safe) {
+  CBigNum rand = RandKBitBigum(numBits);
+  CBigNum prime;
+  mpz_nextprime(prime.bn, rand.bn);
+  return prime;
+}
+

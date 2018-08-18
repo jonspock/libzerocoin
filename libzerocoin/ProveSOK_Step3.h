@@ -65,7 +65,7 @@ void ProveSOK_Step3(
 
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < n; j++) {
-            rPoly(i, j) = A(i, j) * (Y ^ (i + 1));
+          rPoly(i, j) = A(i, j) * (Y ^ (uint64_t)(i + 1));
             rPoly(-i, j) = B(i, j);
             rPoly(i + m, j) = C(i, j);
         }
@@ -80,7 +80,7 @@ void ProveSOK_Step3(
 
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < n; j++) {
-            sPoly(i, j) = wAj(i, j) * (Y ^ (-i + 1));
+          sPoly(i, j) = wAj(i, j) * (Y ^ (int64_t)(-i + 1));
             sPoly(-i, j) = wBj(i, j);
             sPoly(-i - m, j) = wCj(i, j);
         }

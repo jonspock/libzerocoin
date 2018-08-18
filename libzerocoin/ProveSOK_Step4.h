@@ -101,13 +101,13 @@ void ProveSOK_Step4(
 
     exit(0);
 
-    rho = delta * (x ^ (2 * m + 1));
-    auto xm = x ^ m;
+    rho = delta * (x ^ (int64_t)(2 * m + 1));
+    auto xm = x ^ (int64_t)m;
 
     for (size_t i = 1; i < m + 1; i++) {
-        auto xi = (x ^ i);
-        rho += alpha[i - 1] * xi * (y ^ i);
-        rho += beta[i - 1] * (x ^ (-i));
+        auto xi = (x ^ (int64_t)i);
+        rho += alpha[i - 1] * xi * (y ^ (int64_t)i);
+        rho += beta[i - 1] * (x ^ ((int64_t)-i));
         rho += xm * gamma[i - 1] * xi;
     }
 

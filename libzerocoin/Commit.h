@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "rand_bignum.h"
 #include "Commitment.h"
 
 namespace libzerocoin {
@@ -32,7 +33,7 @@ template <ModulusType T, ModulusType G> Commitment commit(const CBigNum& g1, con
   const IntegerMod<T> g(g1);
   const IntegerMod<T> h(h1);
   CBigNum m = IntegerModModulus<T>::getModulus();
-  CBigNum r = CBigNum::randBignum(m);
+  CBigNum r = randBignum(m);
   /// \f$ commitment = g^{value} * h^{randomness} \f$
   CBigNum commitmentValue = ((g ^ value) * (h ^ r)).getValue();
   Commitment commit(r, value, commitmentValue);

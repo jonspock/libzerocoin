@@ -11,6 +11,6 @@ IntegerMod<T_> KPolynomial(
 {
     IntegerMod<T_> KPoly;
     for (size_t k = 0; k < K.size(); k++)
-        KPoly += (Y ^ (N + m + k + 1));
+      KPoly += (Y ^ (int64_t)(N + m + k + 1));
     return KPoly;
 }

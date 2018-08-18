@@ -38,15 +38,15 @@ template <ModulusType T> class IntegerMod {
   }
 
   CBigNum getValue() const { return Value; }
-  bool isPrime(const int checks = BN_prime_checks) const { return Value.isPrime(checks); }
+  bool isPrime(const int checks = 15) const { return Value.isPrime(checks); }
 
   void randomize() {
-    if (!BN_rand_range(Value.bn, Mod.bn)) { throw std::runtime_error("IntegerMod:rand : BN_rand_range failed"); }
+    throw std::runtime_error("Not implemented yet");
   }
 
   explicit IntegerMod(const std::vector<uint8_t>& vch) { Value.setvch(vch); }
 
-  int bitSize() const { return BN_num_bits(Value.bn); }
+  int bitSize() const { return Value.bitSize(); }
 
   void setvch(const std::vector<uint8_t>& vch) { Value.setvch(vch); }
   std::vector<uint8_t> getvch() const { return Value.getvch(); }
@@ -54,37 +54,33 @@ template <ModulusType T> class IntegerMod {
   std::string ToString(int nBase = 10) const { return Value.ToString(nBase); }
   std::string GetHex() const { return ToString(16); }
   IntegerMod operator^(const IntegerMod& e) const {
-    CAutoBN_CTX pctx;
     IntegerMod ret(*this);
     if (e.Value < 0) {
       // g^-x = (g^-1)^x
       CBigNum inv = Value.inverse(Mod);
       CBigNum posE = e.Value * -1;
-      if (!BN_mod_exp(ret.Value.bn, inv.bn, posE.bn, Mod.bn, pctx))
-        throw std::runtime_error("IntegerMod::pow_mod: BN_mod_exp failed on negative exponent");
-    } else if (!BN_mod_exp(ret.Value.bn, Value.bn, e.Value.bn, Mod.bn, pctx))
-      throw std::runtime_error("IntegerMod::operator^GF pow_mod : BN_mod_exp failed");
+      ret.Value = inv.pow_mod(posE, Mod);
+    } else {
+      ret.Value = Value.pow_mod(e.Value, Mod);
+    }
     return ret;
   }
   IntegerMod operator^(const CBigNum& e) const {
-    CAutoBN_CTX pctx;
     IntegerMod ret(*this);
     if (e < 0) {
       // g^-x = (g^-1)^x
       CBigNum inv = Value.inverse(Mod);
       CBigNum posE = e * -1;
-      if (!BN_mod_exp(ret.Value.bn, inv.bn, posE.bn, Mod.bn, pctx))
-        throw std::runtime_error("IntegerMod::pow_mod: BN_mod_exp failed on negative exponent");
-    } else if (!BN_mod_exp(ret.Value.bn, Value.bn, e.bn, Mod.bn, pctx))
-      throw std::runtime_error("IntegerMod operator^CBigNum pow_mod : BN_mod_exp failed");
+      ret.Value = inv.pow_mod(posE, Mod);
+    } else {
+      ret.Value = Value.pow_mod(e, Mod);
+    }
     return ret;
   }
 
   IntegerMod inverse() const {
-    CAutoBN_CTX pctx;
     IntegerMod ret(*this);
-    if (!BN_mod_inverse(ret.Value.bn, Value.bn, Mod.bn, pctx))
-      throw std::runtime_error("IntegerMod::inverse*= :BN_mod_inverse");
+    mpz_invert(ret.Value.bn, Value.bn, Mod.bn);
     return ret;
   }
 
@@ -101,9 +97,7 @@ template <ModulusType T> class IntegerMod {
   }
 
   IntegerMod& operator*=(const IntegerMod& b) {
-    CAutoBN_CTX pctx;
-    if (!BN_mod_mul(Value.bn, Value.bn, b.Value.bn, Mod.bn, pctx))
-      throw std::runtime_error("IntegerMod::operator*= : BN_mul failed");
+    Value = Value.mul_mod(b.Value, Mod);
     return *this;
   }
 
@@ -114,7 +108,7 @@ template <ModulusType T> class IntegerMod {
 
   IntegerMod& operator++() {
     // prefix operator
-    if (!BN_add(Value.bn, Value.bn, BN_value_one())) throw std::runtime_error("IntegerMod::operator++ : BN_add failed");
+    mpz_add(Value.bn, Value.bn, CBigNum(1).bn);
     Value = Value % Mod;
     return *this;
   }
@@ -129,8 +123,7 @@ template <ModulusType T> class IntegerMod {
   IntegerMod& operator--() {
     // prefix operator
     IntegerMod r(*this);
-    if (!BN_sub(r.Value.bn, Value.bn, BN_value_one()))
-      throw std::runtime_error("IntegerMod::operator-- : BN_sub failed");
+    mpz_sub(Value.bn, Value.bn, CBigNum(1).bn);
     Value = r.Value % Mod;
     return *this;
   }
@@ -159,60 +152,57 @@ template <ModulusType T> class IntegerMod {
 
 template <ModulusType T> inline const IntegerMod<T> operator+(const IntegerMod<T>& a, const IntegerMod<T>& b) {
   IntegerMod<T> r(a);
-  if (!BN_add(r.Value.bn, a.Value.bn, b.Value.bn)) throw std::runtime_error("IntegerMod<T>::operator+ : BN_add failed");
+  CBigNum sum;
+  mpz_add(sum.bn, a.Value.bn, b.Value.bn);
+  mpz_mmod(r.Value.bn, sum.bn, a.Mod.bn);
   return r;
 }
 
 template <ModulusType T> inline const IntegerMod<T> operator-(const IntegerMod<T>& a, const IntegerMod<T>& b) {
   IntegerMod<T> r(a);
-  if (!BN_sub(r.Value.bn, a.Value.bn, b.Value.bn)) throw std::runtime_error("IntegerMod<T>::operator- : BN_sub failed");
+  CBigNum sum;
+  mpz_sub(sum.bn, a.Value.bn, b.Value.bn);
+  mpz_mmod(r.Value.bn, sum.bn, a.Mod.bn);
   return r;
 }
 
 template <ModulusType T> inline const IntegerMod<T> operator-(const IntegerMod<T>& a) {
   IntegerMod<T> r(a);
-  BN_set_negative(r.Value.bn, !BN_is_negative(r.Value.bn));
+  mpz_neg(r.Value.bn, a.Value.bn);
   return r;
 }
 
 template <ModulusType T> inline const IntegerMod<T> operator*(const IntegerMod<T>& a, const IntegerMod<T>& b) {
-  CAutoBN_CTX pctx;
   IntegerMod<T> r(a);
-  if (!BN_mod_mul(r.Value.bn, a.Value.bn, b.Value.bn, r.Mod.bn, pctx))
-    throw std::runtime_error("IntegerMod<T>::operator* : BN_mul failed");
+  r.Value = (a.Value * b.Value) % r.Mod;
   return r;
 }
 template <ModulusType T> inline const IntegerMod<T> operator*(const CBigNum& a, const IntegerMod<T>& b) {
-  CAutoBN_CTX pctx;
   IntegerMod<T> r(b);
-  if (!BN_mod_mul(r.Value.bn, a.bn, b.Value.bn, r.Mod.bn, pctx))
-    throw std::runtime_error("IntegerMod<T>::operator* : BN_mul failed");
+  r.Value = (a * b.Value) % r.Mod;
   return r;
 }
 template <ModulusType T> inline const IntegerMod<T> operator*(const IntegerMod<T>& a, const CBigNum& b) {
-  CAutoBN_CTX pctx;
   IntegerMod<T> r(a);
-  if (!BN_mod_mul(r.Value.bn, a.Value.bn, b.bn, r.Mod.bn, pctx))
-    throw std::runtime_error("IntegerMod<T>::operator* : BN_mul failed");
+  r.Value = (a.Value * b) % r.Mod;
   return r;
 }
 
 template <ModulusType T> inline const IntegerMod<T> operator/(const IntegerMod<T>& a, const IntegerMod<T>& b) {
-  CAutoBN_CTX pctx;
   IntegerMod<T> r(a);
   CBigNum t = b.Value.inverse(a.Mod);
   IntegerMod<T> ti(t);
   IntegerMod<T> ret = r * ti;
   return ret;
 }
-
+/*
 template <ModulusType T> inline const IntegerMod<T> operator%(const IntegerMod<T>& a, const IntegerMod<T>& b) {
-  CAutoBN_CTX pctx;
   IntegerMod<T> r(a);
   if (!BN_nnmod(&r.Value.bn, &a.Value.bn, &b.Value.bn, pctx))
     throw std::runtime_error("IntegerMod<T>::operator% : BN_div failed");
   return r;
 }
+*/
 
 template <ModulusType T> inline bool operator==(const IntegerMod<T>& a, const IntegerMod<T>& b) {
   return (a.Value == b.Value);

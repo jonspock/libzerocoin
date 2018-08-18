@@ -15,6 +15,8 @@
 #include "CommitmentProofOfKnowledge.h"
 #include "IntegerMod.h"
 #include "hash.h"
+#include "rand_bignum.h"
+
 #include <iostream>
 namespace libzerocoin {
 // CommitmentProofOfKnowledge class
@@ -45,9 +47,9 @@ CommitmentProofOfKnowledge::CommitmentProofOfKnowledge(const SerialNumberGroupPa
 
   CBigNum maxRange = (CBigNum(2).pow(randomSize) - CBigNum(1));
 
-  const CBigNum r1 = CBigNum::randBignum(maxRange);
-  const CBigNum r2 = CBigNum::randBignum(maxRange);
-  const CBigNum r3 = CBigNum::randBignum(maxRange);
+  const CBigNum r1 = randBignum(maxRange);
+  const CBigNum r2 = randBignum(maxRange);
+  const CBigNum r3 = randBignum(maxRange);
 
   const IntegerMod<SERIAL_NUMBER_SOK_COMMITMENT_MODULUS> g1(ap->g);
   const IntegerMod<SERIAL_NUMBER_SOK_COMMITMENT_MODULUS> h1(ap->h);
