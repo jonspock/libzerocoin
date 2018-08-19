@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "random.h"
+#include "hash.h"
 #include "rand_bignum.h"
 #include "libzerocoin/bignum.h"
 #include "sha512.h"
@@ -483,6 +484,32 @@ CBigNum randBignum(const CBigNum& range) {
   GetRandBytes(buf.data(), size);
 
   CBigNum ret(buf);
+  if (ret < 0)
+    mpz_neg(ret.bn, ret.bn);
+  return ret;
+}
+
+CBigNum detRandBignum(const CBigNum& range, arith_uint256& seed) {
+  size_t size = (mpz_sizeinbase (range.bn, 2) + CHAR_BIT-1) / CHAR_BIT;
+  std::vector<unsigned char> buf(size);
+
+  int loops = ((8*size)/256);
+  if (16*loops != 256) loops++;
+  CBigNum hashSeed;
+  CBigNum newHash;
+  hashSeed.setuint256(Hash(seed.begin(), seed.end())); // BIG ENOUGH?
+  for (int i=0;i<loops-1;i++) {
+    seed++;
+    newHash.setuint256(Hash(seed.begin(),seed.end()));
+    hashSeed <<= 256;
+    hashSeed += newHash;
+  }
+    
+  hashSeed = hashSeed % range;
+                       
+  CBigNum ret(hashSeed);
+    
+  //std::cout << "(original size = )" << range.bitSize() << " Random Size = " << ret.bitSize() << "\n";
   if (ret < 0)
     mpz_neg(ret.bn, ret.bn);
   return ret;

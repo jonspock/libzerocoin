@@ -8,6 +8,7 @@
 #include <cstdint>
 
 class CBigNum;
+CBigNum detRandBignum(const CBigNum& range, arith_uint256& seed);
 CBigNum randBignum(const CBigNum& range);
 CBigNum RandKBitBigum(const uint32_t k);
 CBigNum generatePrime(const unsigned int numBits, bool safe = false);
