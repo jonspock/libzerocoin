@@ -10,26 +10,60 @@
  *  license    This project is released under the MIT license.
  **/
 
-// Copyright (c) 2018 The PIVX developers
+// Copyright (c) 2018 The PIVX developer
+// Copyright (c) 2018 Jon Spock
 #include "PrivateCoin.h"
+#include "Commit.h"
+#include "Commitment.h"
 #include "Denominations.h"
-#include "ModulusType.h"
 #include "IntegerMod.h"
+#include "ModulusType.h"
+#include "pubkey.h"
+#include "hash.h"
+#include "uint512.h"
 #include <stdexcept>
 
-namespace libzerocoin
-{
-PrivateCoin::PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomination) : params(p)
-{
-    // Verify that the parameters are valid
-    if (this->params->initialized == false) {
-        throw std::runtime_error("Params are not initialized");
-    }
+using namespace std;
 
-    // Mint a new coin with a random serial number using the fast process.
-    // This is more vulnerable to timing attacks so don't mint coins when
-    // somebody could be timing you.
-    this->mintCoinFast(denomination);
+namespace libzerocoin {
+
+bool IsValidCoinValue(const ZerocoinParams* params, const IntegerMod<COIN_COMMITMENT_MODULUS>& C) {
+  return (C >= params->accumulatorParams.minCoinValue) && (C <= params->accumulatorParams.maxCoinValue) &&
+         C.isPrime(ZEROCOIN_MINT_PRIME_PARAM);
+}
+
+bool GenerateKeyPair(const CBigNum& bnGroupOrder, const uint256& nPrivkey, CKey& key, CBigNum& bnSerial) {
+  // Generate a new key pair, which also has a 256-bit pubkey hash that qualifies as a serial #
+  // This builds off of Tim Ruffing's work on libzerocoin, but has a different implementation
+  if (nPrivkey.IsNull()) throw runtime_error("Private Key was Null - Determinism not possible");
+
+  CKey keyPair(nPrivkey.begin());
+  CPubKey pubKey = keyPair.GetPubKey();
+  std::vector<uint8_t> b = pubKey.ToStdVector();
+  uint256 hashPubKey = Hash(b.begin(), b.end());
+
+  CBigNum s(hashPubKey);
+  key = keyPair;
+  bnSerial = s;
+  return true;
+}
+
+PrivateCoin::PrivateCoin(const ZerocoinParams* p) : params(p) { assert(p); }
+
+PrivateCoin::PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomination, const CBigNum& Serial,
+                         const CBigNum& Randomness)
+    : params(p) {
+  // Verify that the parameters are valid
+  assert(p);
+
+  // Save Parameters & do Commitment
+  serialNumber = Serial;
+  randomness = Randomness;
+
+  // 2 TEMPLATE PARAMS are the same
+  Commitment c = commit<COIN_COMMITMENT_MODULUS, COIN_COMMITMENT_MODULUS>(
+      p->coinCommitmentGroup.g, p->coinCommitmentGroup.h, serialNumber, randomness);
+  this->publicCoin = PublicCoin(c.getCommitmentValue(), denomination);
 }
 
 /**
@@ -46,53 +80,73 @@ PrivateCoin::PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomin
  * to timing attacks. Don't use it if you think someone
  * could be timing your coin minting.
  **/
-void PrivateCoin::mintCoinFast(const CoinDenomination denomination)
-{
-    // Generate a random serial number in the range 0...{q-1} where
-    // "q" is the order of the commitment group.
-    const CBigNum& groupOrder = this->params->coinCommitmentGroup.groupOrder;
-    const IntegerMod<COIN_COMMITMENT_MODULUS> g(this->params->coinCommitmentGroup.g);
-    const IntegerMod<COIN_COMMITMENT_MODULUS> h(this->params->coinCommitmentGroup.h);
 
-    CBigNum s = CBigNum::randBignum(groupOrder);
+CBigNum PrivateCoin::CoinFromSeed(const uint512& seedZerocoin) {
+  CBigNum bnRandomness;
+  CBigNum bnSerial;
+  CoinDenomination denomination = CoinDenomination::ZQ_ONE;  // Not used
 
-    /// Generate a random number "r" in the range 0...{q-1}
-    CBigNum r = CBigNum::randBignum(groupOrder);
+  // convert state seed into a seed for the private key
+  uint256 nSeedPrivKey = seedZerocoin.trim256();
+  const IntegerMod<COIN_COMMITMENT_MODULUS> g(this->params->coinCommitmentGroup.g);
+  const IntegerMod<COIN_COMMITMENT_MODULUS> h(this->params->coinCommitmentGroup.h);
 
-    /// Manually compute a Pedersen commitment to the serial number "s" under randomness "r"
-    /// \f$ C = g^s * h^r (mod p) \f$
-    IntegerMod<COIN_COMMITMENT_MODULUS> C = (g^s) * (h^r);
-    
-    /// Repeat this process up to MAX_COINMINT_ATTEMPTS times until obtain a prime number
-    for (uint32_t attempt = 0; attempt < MAX_COINMINT_ATTEMPTS; attempt++) {
-        // First verify that the commitment is a prime number
-        // in the appropriate range. If not, we'll throw this coin
-        // away and generate a new one.
-        if (C.isPrime(ZEROCOIN_MINT_PRIME_PARAM) &&
-            C >= params->accumulatorParams.minCoinValue &&
-            C <= params->accumulatorParams.maxCoinValue) {
-            // Found a valid coin. Store it.
-            this->serialNumber = s;
-            this->randomness = r;
-            this->publicCoin = PublicCoin(C.getValue(), denomination);
+  bool isValidKey = false;
+  CKey key = CKey();
+  while (!isValidKey) {
+    nSeedPrivKey = Hash(nSeedPrivKey.begin(), nSeedPrivKey.end());
+    isValidKey = GenerateKeyPair(params->coinCommitmentGroup.groupOrder, nSeedPrivKey, key, bnSerial);
+    setPrivKey(key.GetPrivKey());
+  }
 
-            // Success! We're done.
-            return;
-        }
+  // hash randomness seed with Bottom 256 bits of seedZerocoin & attempts256 which is initially 0
+  arith_uint512 seed = UintToArith512(seedZerocoin) >> 256;
+  uint256 randomnessSeed = ArithToUint512(seed).trim256();
+  uint256 hashRandomness = Hash(randomnessSeed.begin(), randomnessSeed.end());
+  bnRandomness.setuint256(hashRandomness);
+  bnRandomness = bnRandomness % params->coinCommitmentGroup.groupOrder;
 
-        // Generate a new random "r_delta" in 0...{q-1}
-        CBigNum r_delta = CBigNum::randBignum(this->params->coinCommitmentGroup.groupOrder);
+  CBigNum r = bnRandomness;
+  CBigNum s = bnSerial;
 
-        /// The commitment was not prime. Increment "r" and recalculate "C":
-        /// \f$ r = r + r_delta mod q \f$
-        /// \f$ C = C * h mod p \f$
-        r = (r + r_delta) % this->params->coinCommitmentGroup.groupOrder;
-        C *= (h^r_delta);
+  /// Manually compute a Pedersen commitment to the serial number "s" under randomness "r"
+  /// \f$ C = g^s * h^r (mod p) \f$
+  IntegerMod<COIN_COMMITMENT_MODULUS> C = (g ^ s) * (h ^ r);
+
+  CBigNum random;
+  arith_uint256 attempts256 = 0;
+  // Iterate on Randomness until a valid commitmentValue is found
+  while (true) {
+    // Now verify that the commitment is a prime number
+    // in the appropriate range. If not, we'll throw this coin
+    // away and generate a new one.
+    if (IsValidCoinValue(params, C.getValue())) {
+      serialNumber = s;
+      randomness = r;
+      publicCoin = PublicCoin(C.getValue(), denomination);
+      return C.getValue();
     }
 
-    // We only get here if we did not find a coin within
-    // MAX_COINMINT_ATTEMPTS. Throw an exception.
-    throw std::runtime_error("Unable to mint a new Zerocoin (too many attempts)");
+    // Did not create a valid commitment value.
+    /// The commitment was not prime. Increment "r" and recalculate "C":
+    attempts256++;
+    hashRandomness = Hash(randomnessSeed.begin(), randomnessSeed.end(), attempts256.begin(), attempts256.end());
+    random.setuint256(hashRandomness);
+    /// \f$ r = r + r_delta mod q \f$
+    /// \f$ C = C * h mod p \f$
+    r = (r + random) % params->coinCommitmentGroup.groupOrder;
+    C *= (h ^ random);
+  }
+}
+
+CPubKey PrivateCoin::getPubKey() const {
+  CKey key(privkey);
+  return key.GetPubKey();
+}
+
+void PrivateCoin::sign(const uint256& hash, vector<uint8_t>& vchSig) const {
+  CKey key(privkey);
+  key.Sign(hash, vchSig);
 }
 
 } /* namespace libzerocoin */
