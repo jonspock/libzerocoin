@@ -16,6 +16,14 @@ endif()
 
 project(ZKP)
 
+
+
+# Add path for custom modules
+set(CMAKE_MODULE_PATH
+	${CMAKE_MODULE_PATH}
+	${CMAKE_CURRENT_SOURCE_DIR}/modules
+)
+
 enable_testing()
 
 #---------------------------------------------------------------------------------------------------------
@@ -39,41 +47,60 @@ else()
 	set(ANL anl)
 endif()
 
-add_definitions("-Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -fPIC -fvisibility=hidden")
+add_definitions("-Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -fPIC -fvisibility=hidden -DHAVE_CONFIG_H")
 
-SET(ARITH
-	./external/uint256.cpp
-	./external/crypto/sha256.cpp )
+include(CheckSymbolExists)
+include(CheckCXXCompilerFlag)
 
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(OPENSSL_VER "1.0.2n")
-  set(OPENSSL_ROOT_DIR "/usr/local/Cellar/openssl/${OPENSSL_VER}/")
+check_cxx_compiler_flag(-std=c++17 HAVE_FLAG_STD_CXX17)
+if (HAVE_FLAG_STD_CXX17)
+  set(CMAKE_CXX_STANDARD 17)
+  message(STATUS "Compiler supports C++17")
+  add_definitions("-D_LIBCPP_ENABLE_CXX17_REMOVED_AUTO_PTR") # still needed?
+else()
+  message(ERROR "Compiler must at least support C++17")
 endif()
 
-find_package(OpenSSL)
-if (OPENSSL_FOUND)
-  message(STATUS "Found OpenSSL")
-endif()  
+SET(ARITH
+	./external/arith_uint256.cpp
+	./external/uint256.cpp
+	./external/sha256.cpp
 
-find_package( Boost COMPONENTS system filesystem )
-link_directories ( ${Boost_LIBRARY_DIRS} )
+	./external/key.cpp
+  ./support/cleanse.cpp
+  ./support/lockedpool.cpp
+
+  ./external/random.cpp
+  ./external/rand_bignum.cpp
+  ./external/utilstrencodings.cpp
+
+  )
+
+find_package(gmp)
+if (GMP_FOUND)
+  message(STATUS "Found libgmp")
+endif()
+
+find_package(sodium REQUIRED)
+if (SODIUM_FOUND)
+  message(STATUS "Found libsodium")
+  message(STATUS "Sodium include dir = ${sodium_INCLUDE_DIR}")
+endif()
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/external
+  ${GMP_INCLUDE_DIR}
+  ${sodium_INCLUDE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
-  ${Boost_INCLUDE_DIRS}
-  ${OPENSSL_INCLUDE_DIR}
   )
 
-file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
-source_group("SrcHeaders" FILES ${HEADERS})
+file(GLOB HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/external/*.h)
+source_group("ExtHeaders" FILES ${HEADERS})
 
-file(GLOB CRYPTO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/crypto/*.h)
-source_group("CryptoHeaders" FILES ${CRYPTO_HEADERS})
+file(GLOB LIB_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/libzerocoin/*.h)
+source_group("LibHeaders" FILES ${LIB_HEADERS})
 
 add_library(coin ${HEADERS} ${CRYPTO_HEADERS} ${ARITH})
-set_property(TARGET coin PROPERTY CXX_STANDARD 11)
-
 add_subdirectory(libzerocoin)
 
 #---------------------------------------------------------------------------------------------------------

@@ -1,90 +1,101 @@
 /**
-* @file       Params.cpp
-*
-* @brief      Parameter class for Zerocoin.
-*
-* @author     Ian Miers, Christina Garman and Matthew Green
-* @date       June 2013
-*
-* @copyright  Copyright 2013 Ian Miers, Christina Garman and Matthew Green
-*  license    This project is released under the MIT license.
-**/
-// Copyright (c) 2018 The PIVX developers
+ * @brief      Parameter class for Zerocoin.
+ * @author     Ian Miers, Christina Garman and Matthew Green
+ * @copyright  Copyright 2013 Ian Miers, Christina Garman and Matthew Green
+ *  license    This project is released under the MIT license.
+ **/
+// Copyright (c) 2018 The PIVX developer
+// Copyright (c) 2018 Jon Spock
 #include "ZerocoinParams.h"
 #include "AccumulatorAndProofParams.h"
-#include "ParamGeneration.h"
 #include "ModulusType.h"
+#include "ParamGeneration.h"
 
-namespace libzerocoin
-{
-ZerocoinParams::ZerocoinParams(CBigNum N, uint32_t securityLevel)
-{
-    this->zkp_hash_len = securityLevel;
-    this->zkp_iterations = securityLevel;
+namespace libzerocoin {
 
-    this->accumulatorParams.k_prime = ACCPROOF_KPRIME;
-    this->accumulatorParams.k_dprime = ACCPROOF_KDPRIME;
+ZerocoinParams ZCParamsDec(ZEROCOIN_DEFAULT_SECURITYLEVEL);
+ZerocoinParams* gpZerocoinParams = &ZCParamsDec;
 
-    this->initialized = false;
-    this->accumulatorParams.initialized = false;
-    // Set the accumulator modulus to "N".
-    this->accumulatorParams.accumulatorModulus = IntegerModModulus<ACCUMULATOR_MODULUS>::getModulus();
+ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
+  this->zkp_hash_len = securityLevel;
+  this->zkp_iterations = securityLevel;
 
-    //-------------------------
-    
-    this->coinCommitmentGroup.modulus = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
-    this->coinCommitmentGroup.groupOrder.SetHex("cd4ca8386d4619718df572cc8ca31b009b044cb50edc79fe26e64324a0b9d2d3");
+  this->accumulatorParams.k_prime = ACCPROOF_KPRIME;
+  this->accumulatorParams.k_dprime = ACCPROOF_KDPRIME;
 
-    this->coinCommitmentGroup.g.SetHex("166671ac5475e45b04ff52ab53020be557fe4c9ca9bf900c4a6d5a2f2c5455e4fb2d23e46cf0aa61b88a3a5567d196b1523155ec3e528a5af423ba4f1d76817aaa2c33de5facfe2b0ea366639bdf81cd2e288abf2160475f71b3315c1e37e9c7c7cf692823140443a2286317339a938299b74751995af2d6900bc282ab30bc08");
-    this->coinCommitmentGroup.h.SetHex("77e0c7572b6f58057b7ccf67074720bdf8a4d4fc4450de932cb5f601e6cf99b6f417ad1e523904630ee65a35638d5b1c48784411dc142c3b70040b9ab37ab9dc5f81c4f14502b5aba7d8b79b227b84b7bdd8ffb68a89d72204a186df705502173ec13ae035abf6eff2a6878ba070ac5c733e694d6fc13f9eccdd7ae1fdf1ed7");
+  // Set the accumulator modulus to "N".
+  this->accumulatorParams.accumulatorModulus = IntegerModModulus<ACCUMULATOR_MODULUS>::getModulus();
 
-    //-------------------------
-    
-    this->serialNumberSoKCommitmentGroup.groupOrder =  IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_GROUP>::getModulus();
-    this->serialNumberSoKCommitmentGroup.modulus = IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_MODULUS>::getModulus();
+  //-------------------------
 
-    this->serialNumberSoKCommitmentGroup.g.SetHex("cb944ee1c7fd61f05de75cfec4584bc0860af59875330d5841d36964cace014750eedd644d3db9fe7fe108a440bbed90b81f6f329af4e139d2c13ba7fbc4b57d638f9052409edc18835ab486fb3281e305d55394e1f68c501d8958f5db2ba76637f28b871793e3c12a4b970587c614a523de1ac890ff2c4c1cebd998c0e7a4e73");
+  this->coinCommitmentGroup.modulus = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
+  this->coinCommitmentGroup.groupOrder.SetHex("a33a39fceb03fef51aa5f50322b557664a8364d7ad0ada150487fae8576af9e3");
 
-    this->serialNumberSoKCommitmentGroup.h.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
+  this->coinCommitmentGroup.g.SetHex(
+      "9a7fd6508dfa79258e50019ab6cb59b4f91b2823dcd9250fb3ccf9fd8263b29a15b005c429915cec63e7d3eba1da337f45dd713246c41e39"
+      "ac671cf2f87adfc6d45c842ae7ad21ed291e3a48b2a6e5d39381f6d4a9ab83d5aaa5031d17554df70cf5ecfe10096cf1a565d0f826b71eb4"
+      "d105a3016afc445613f04ffbd0dd4162");
+  this->coinCommitmentGroup.h.SetHex(
+      "ccbbdd469de23cfba19728b625ee7b197b60389eebb7383ec63184fe6ddc94acf0e6e68eb49523acff5e4d0c6fd20b744df744c1a7b55414"
+      "0d110e6398040425790fe3b9b32e87238f0338c4f52e3f9b84bef7bceace17f26ada12fa5e1ca0d992b79599f0ef29b66c323b88c1471d93"
+      "67f991604a97414f99f748ead3d38622");
 
-    // TBD - temporary HACK
-    this->serialNumberSoKCommitmentGroup.g1.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g2.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g3.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g4.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g5.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g6.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g7.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g8.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.g9.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.ga.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    this->serialNumberSoKCommitmentGroup.gb.SetHex("371817107be75218225abe8a00155bfd8762a18b3d8ae8e61f42503e75b18e8d8f681381319ffb60644bef2163df4036026524e290417bef415a7441173c519248e8db54c0cd6d8ea1d30a218a121babcda8705989d1e0a48198f096a12745ae3c5969c23d7b40fa8bfcf79acee4657a03574cbb04da1d9f7a2b88c2f48aeb00b6");
-    
-    //-------------------------
-    
-    this->accumulatorParams.accumulatorPoKCommitmentGroup.groupOrder = IntegerModModulus<ACCUMULATOR_POK_COMMITMENT_GROUP>::getModulus();
-    this->accumulatorParams.accumulatorPoKCommitmentGroup.modulus = IntegerModModulus<ACCUMULATOR_POK_COMMITMENT_MODULUS>::getModulus();
+  //-------------------------
 
-    this->accumulatorParams.accumulatorPoKCommitmentGroup.g.SetHex("7bc6a906dce53941560b042ebd59b8e9c954429747e44f949dbd2f0f42ca9c811437845a452ccdbedaada3c871c355096ba88a7e2ec403fb25d1f2e0454c8c91249ac0b2268");
+  this->serialNumberSoKCommitmentGroup.groupOrder = IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_GROUP>::getModulus();
+  this->serialNumberSoKCommitmentGroup.modulus = IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_MODULUS>::getModulus();
 
-    this->accumulatorParams.accumulatorPoKCommitmentGroup.h.SetHex("42f2e448bdb7fd45ad69571468c07ee70cd4759399b7aedaed0ad1f0d3799e3bead6c3cc9c6600c25d8ba709527e9de84b51362eae546b99a5c0dc6095e863cda07d3189a06");
+  this->serialNumberSoKCommitmentGroup.g.SetHex(
+      "755af74f335a187e660d329f9ff1f2186b8e087797b3043ce17dd4fe734359fa17d5aa2e4190afee489b0a1fee25c9fc08836cb658bdeb7e"
+      "fe63fc75e67e3dc3514b2bed4685f82ed104c7ad7c19d171e8dbd589d4c8888e70eec79c5a2d72e6346c91d17e7af34482a5d446423059db"
+      "a15e857d4020bcd5095429da2886990032");
 
-    //-------------------------
-    
-    this->accumulatorParams.accumulatorQRNCommitmentGroup.g.SetHex("16c2edcc12d71c0657a7f8114ba021b1770e72aa3d7af7686b5a9a0461623445d7148117a4a197f273c489391882c569308b91d802b7c4e6aadda8ebdefb83dbff79593f49aa5f86386ce68b73db4b51ce274eb3ab8d8fee696754514cdc9ace987225c047ee432ac0a3d87a905c19e734e4bdc87a55c48f8e93cbdfcd69c10fe6f927ece8426a3ac70c36ab5fd2c66524564e07657d2d7572c6757f9f77654f6530643f1d611b323dcd083dafed6deca72fb91a703cd2ce8ec88a8a2a89c6530898f5f8eaae8c09a3bad9117f8b39df837ba3f03bb19675e9d9100a32fd9242f394957135dc65fe44888a348e6d71fb29cae39ba478ff0ea08c4e030e18b466be44f2f202de5cf042455ff79bc415ec9a9039e0bdf8f5f1ad54f7dbd9f316104104abf6b78cf13db7186e4447ca0481ffc79bdab");
+  this->serialNumberSoKCommitmentGroup.h.SetHex(
+      "5e257cc3861dfbbd85a95f16fdc867780188c0bc469a7744871f9fa79cfb942d3eb60642736d3e6db940f69fd05d19d57a2b1aa686ad8d26"
+      "95b39fef8a4c6c92c99636a6172e5b2b9df49e113508185d15b18158f05d63fa4d6819c126f9065b01183043a17022f6c583735797f3e72c"
+      "3c9c2485327127158e4cf0eb23391d739");
 
-    this->accumulatorParams.accumulatorQRNCommitmentGroup.h.SetHex("115967f5f81232cf81a590e8a6017eeea0fb2717d63728ccbb513211e769bb2825ea86fa7d280e4ebdf3697e62b0c842d94d1e83508db98bc0bc4fdd2581cae325702c08bce7ea54ba05229030df55e4b7aaea3c129ebb00ba543696fa46f7092438a1fb1a757bb3bd797c3df831ef7649b316e3423be24c3c2e94ab333507196ee781ee5c86ce3fda7b4f4c5a7481fe87cb0cee683630c0cc52197621a847d5997d703a8f6cdcbff199b16c6aa1dc346c3633a145909f1846012ef9c41a4fdd176f4d5e571b3d2697fd1487df2e91077d1615f383a1092d3d8e33a1594b11614c0542205d2931c0a27816345c4b27b535b185d9f2f86861a5c43215544d60501e0b53dcedf172bfdb05fd8272feb143fa92aca93eca6021735723fe621a1c53ac9384b7e48ca547fa30c48917bcc1022e81bff12");
+  //-------------------------
 
+  this->accumulatorParams.accumulatorPoKCommitmentGroup.groupOrder =
+      IntegerModModulus<ACCUMULATOR_POK_COMMITMENT_GROUP>::getModulus();
+  this->accumulatorParams.accumulatorPoKCommitmentGroup.modulus =
+      IntegerModModulus<ACCUMULATOR_POK_COMMITMENT_MODULUS>::getModulus();
 
-    this->accumulatorParams.accumulatorBase = CBigNum(961);
+  this->accumulatorParams.accumulatorPoKCommitmentGroup.g.SetHex(
+      "1d5868e648ac6d41756e0409a510ff5a54bf1ebad22904ab359af54bb0d20a599324cba5ef004d7837cfa6b5904dbc221de6332101df5ef8"
+      "d99992e8d5679969cc3221c0ba7");
 
-    this->accumulatorParams.minCoinValue.SetHex("800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+  this->accumulatorParams.accumulatorPoKCommitmentGroup.h.SetHex(
+      "408f47ff9a66729f6e6ad9796ce794e702995429c7f621294491042b63e1db4ed3cd9572e69fd82bd8cadf3e386dceb4064838be83105764"
+      "60c3d4f40670b2d14b12ac23a86");
 
-    this->accumulatorParams.maxCoinValue = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
+  //-------------------------
 
-    this->accumulatorParams.initialized = true;
-    this->initialized = true;
+  this->accumulatorParams.accumulatorQRNCommitmentGroup.g.SetHex(
+      "6324dc564e2b4afec9cabebb4d77daf9bac097fc2b72caffb0fd6db968ce1e4aff24137928fefecd636b8a987b5879e06b1ab52b1d69b2ca"
+      "f5a0102328680fda67440691c7d36429560ead7490a21d90d92bd216e47a04ed810d3b4a79182dfbea9ff48d9631c6a5139c805d7a1ea5e3"
+      "20b96b4fbc192ed8c957d5318fbc45b00bd911c58783b266ec71cad61a7b79236d2936024869d64dfb003173491932ba487dae5f6e7b0894"
+      "45f0579297c221f7953c1143b4c9eae022f2c171401e6f49d89369ad0ef6ccd169f4b84a1e8cfe241bb2bacf362b18e967a379775b70f176"
+      "f269a96c5e51f16b9c7e902336e293fcf45f1769d58d705075966ce97377f63a");
+
+  this->accumulatorParams.accumulatorQRNCommitmentGroup.h.SetHex(
+      "61a3be57d109c4bd2560ed3d52fb1b153612af0fecd25795ea0c64ef7fa730f081d2b2fd12d4d3f52b6d524fe47e07bed9397711491d4e01"
+      "2b7d744ebd37b448726f38fd9252b16111a4454dbda10f0d4eb6b76b78cecfb37c1061d2cc7d75d73b5a59f508214caa29e0cc35f2196832"
+      "4b39d477007905d345cbb262b2574550f146c7371b4ce09fb804eba9bfeae2c68d22a585e7264402accd7863c49e1073a0358a14f70e0066"
+      "2591bbdc2d4dc6a4fae0390757f128ee320bd7cb51f50ed0f64721fe11b116f00234ec807f56a85ce1649a6026eb9179e97d00323cf6a210"
+      "9e6a4b6d60b38a4f36744e2884442a62b48fd395dce9b6f7b5c564c6ef47d802");
+
+  this->accumulatorParams.accumulatorBase = CBigNum(961);
+
+  this->accumulatorParams.minCoinValue.SetHex(
+      "8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      "00000000000000000");
+
+  this->accumulatorParams.maxCoinValue = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
+
+  this->accumulatorParams.initialized = true;
+  this->initialized = true;
 }
-
 
 } /* namespace libzerocoin */

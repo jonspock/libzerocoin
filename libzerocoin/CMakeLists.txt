@@ -11,21 +11,7 @@ if (CMAKE_BUILD_TYPE MATCHES "DEBUG")
   add_definitions(-DZEROCOIN_DEBUG)
 endif()
 
-include_directories(
-  ${Boost_INCLUDE_DIRS}
-  ${OPENSSL_INCLUDE_DIR}
-)
-
-# List of libraries to link in
-#
-list(APPEND zerocoin_libs
-  ${Boost_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-)
-
 add_subdirectory(matrix)
-
-FILE(GLOB ZEROCOIN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 #
 # List of source files to compile
@@ -36,6 +22,7 @@ list(APPEND zerocoin_sources
   PrivateCoin.cpp
   Denominations.cpp
   CoinSpend.cpp
+  IntegerMod.cpp
   CommitmentProofOfKnowledge.cpp
   ZerocoinParams.cpp
   SerialNumberSignatureOfKnowledge.cpp
@@ -44,6 +31,4 @@ list(APPEND zerocoin_sources
 )
 
 add_library(zerocoin ${ZEROCOIN_HEADERS} ${zerocoin_sources})
-target_link_libraries(zerocoin ${zerocoin_libs})
-set_property(TARGET zerocoin PROPERTY CXX_STANDARD 11)
 

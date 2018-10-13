@@ -18,16 +18,19 @@
 #include "libzerocoin/Denominations.h"
 #include "libzerocoin/ParamGeneration.h"
 #include "streams.h"
+#include "random.h"
 #include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <string>
 
+#include <sodium/core.h>
+
 using namespace std;
 using namespace libzerocoin;
 
-#define TESTS_COINS_TO_ACCUMULATE 5
+#define TESTS_COINS_TO_ACCUMULATE 50
 
 // Global test counters
 uint32_t global_NumTests = 0;
@@ -78,7 +81,7 @@ bool Test_ParamGen()
     try {
         timer.start();
         // Instantiating testParams runs the parameter generation code
-        ZerocoinParams testParams(GetTestModulus(), ZEROCOIN_DEFAULT_SECURITYLEVEL);
+        ZerocoinParams testParams(ZEROCOIN_DEFAULT_SECURITYLEVEL);
         timer.stop();
 
         cout << "\tPARAMGEN ELAPSED TIME: " << timer.duration() << " ms\t" << timer.duration() * 0.001 << " s ";
@@ -144,8 +147,12 @@ bool Test_MintCoin()
     try {
         // Generate a list of coins
         timer.start();
-        for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) 
-            global_Coins[i] = new PrivateCoin(global__Params, CoinDenomination::ZQ_ONE);
+        for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) {
+            global_Coins[i] = new PrivateCoin(global__Params);
+            std::string seed = to_string(i);
+            uint512 s(uint512S(seed));
+            global_Coins[i]->CoinFromSeed(s);
+        }
 
         timer.stop();
     } catch (exception& e) {
@@ -202,13 +209,14 @@ bool Test_MintAndSpend()
 
         // Now spend the coin
         timer.start();
-        CoinSpend spend(global__Params, *(global_Coins[0]), acc, 0, wAcc, 0); //(0) presstab
+        uint256 ptxHash(uint256S("0"));
+        CoinSpend spend(global__Params, *(global_Coins[0]), acc, 0, wAcc, ptxHash);
         timer.stop();
 
         cout << "\tSPEND ELAPSED TIME: " << timer.duration() << " ms\t" << timer.duration() * 0.001 << " s" << endl;
 
         // Serialize the proof and deserialize into newSpend
-        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ss(SER_NETWORK, 900);
 
         timer.start();
         ss << spend;
@@ -236,8 +244,9 @@ bool Test_MintAndSpend()
 
 void Test_RunAllTests()
 {
+  if (sodium_init() < 0) { throw string("Libsodium initialization failed."); }
     // Make a new set of parameters from a random RSA modulus
-    global__Params = new ZerocoinParams(GetTestModulus());
+    global__Params = new ZerocoinParams();
 
     global_NumTests = global_SuccessfulTests = 0;
     for (uint32_t i = 0; i < TESTS_COINS_TO_ACCUMULATE; i++) {
