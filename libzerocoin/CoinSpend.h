@@ -17,7 +17,7 @@
 #include "AccumulatorProofOfKnowledge.h"
 #include "CommitmentProofOfKnowledge.h"
 #include "PrivateCoin.h"
-#include "SerialNumberSignatureOfKnowledge.h"
+#include "SerialNumberSoK_small.h"
 #include "ZerocoinParams.h"
 #include "bignum.h"
 #include "pubkey.h"
@@ -121,7 +121,7 @@ class CoinSpend {
   CPubKey pubkey;
   std::vector<uint8_t> vchSig;
   AccumulatorProofOfKnowledge accumulatorPoK;
-  SerialNumberSignatureOfKnowledge serialNumberSoK;
+  SerialNumberSoK_small serialNumberSoK;
   CommitmentProofOfKnowledge commitmentPoK;
 
   // Compatibility

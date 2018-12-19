@@ -31,7 +31,7 @@ namespace libzerocoin {
  */
 class CommitmentProofOfKnowledge {
  public:
-  CommitmentProofOfKnowledge(const SerialNumberGroupParams* ap, const IntegerGroupParams* bp);
+  CommitmentProofOfKnowledge(const IntegerGroupParams* ap, const IntegerGroupParams* bp);
   /** Generates a proof that two commitments, a and b, open to the same value.
    *
    * @param ap the SerialNumberGroup for commitment a
@@ -39,10 +39,10 @@ class CommitmentProofOfKnowledge {
    * @param a the first commitment
    * @param b the second commitment
    */
-  CommitmentProofOfKnowledge(const SerialNumberGroupParams* aParams, const IntegerGroupParams* bParams,
+  CommitmentProofOfKnowledge(const IntegerGroupParams* aParams, const IntegerGroupParams* bParams,
                              const Commitment& a, const Commitment& b);
   template <typename Stream>
-  CommitmentProofOfKnowledge(const SerialNumberGroupParams* aParams, const IntegerGroupParams* bParams, Stream& strm)
+  CommitmentProofOfKnowledge(const IntegerGroupParams* aParams, const IntegerGroupParams* bParams, Stream& strm)
       : ap(aParams), bp(bParams) {
     strm >> *this;
   }
@@ -67,7 +67,7 @@ class CommitmentProofOfKnowledge {
   }
 
  private:
-  const SerialNumberGroupParams* ap;
+  const IntegerGroupParams* ap;
   const IntegerGroupParams* bp;
 
   CBigNum S1, S2, S3, challenge;

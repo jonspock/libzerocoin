@@ -15,7 +15,6 @@
 
 #include "AccumulatorAndProofParams.h"
 #include "IntegerGroupParams.h"
-#include "SerialNumberGroupParams.h"
 #include "ZerocoinDefines.h"
 #include "bignum.h"
 
@@ -56,7 +55,7 @@ class ZerocoinParams {
    * This is the one used in the serial number poof.
    * It's order must be equal to the modulus of coinCommitmentGroup.
    */
-  SerialNumberGroupParams serialNumberSoKCommitmentGroup;
+  IntegerGroupParams serialNumberSoKCommitmentGroup;
 
   /**
    * The number of iterations to use in the serial
@@ -69,6 +68,17 @@ class ZerocoinParams {
    * proofs.
    */
   uint32_t zkp_hash_len;
+
+  // NEW
+  // Constraints tensors generated with ArithmeticCircuit::setPreConstraints()
+	std::vector<CBN_matrix> ZKP_wA;
+	std::vector<CBN_matrix> ZKP_wB;
+	std::vector<CBN_matrix> ZKP_wC;
+	CBN_vector ZKP_K;
+	std::vector< std::vector< std::pair<int, CBigNum> > > S_POLY_A1, S_POLY_A2;
+	std::vector< std::vector< std::pair<int, CBigNum> > > S_POLY_B1, S_POLY_B2;
+	std::vector< std::vector< std::pair<int, CBigNum> > > S_POLY_C1, S_POLY_C2;
+
 
   ADD_SERIALIZE_METHODS
   template <typename Stream, typename Operation> inline void SerializationOp(Stream& s, Operation ser_action) {

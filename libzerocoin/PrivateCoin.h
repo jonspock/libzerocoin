@@ -36,17 +36,28 @@ bool GenerateKeyPair(const CBigNum& bnGroupOrder, const uint256& nPrivkey, CKey&
  */
 class PrivateCoin {
  public:
-  template <typename Stream> PrivateCoin(const ZerocoinParams* p, Stream& strm) : params(p) { strm >> *this; }
   PrivateCoin(const ZerocoinParams* p);
-  PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomination, const CBigNum& Serial,
-              const CBigNum& Randonmess);
-
-  CBigNum CoinFromSeed(const uint512& seedZerocoin);
-
-  const PublicCoin& getPublicCoin() const { return this->publicCoin; }
+  
+  //    PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomination, bool fMintNew = true);
+    PrivateCoin(const ZerocoinParams* p, const CoinDenomination denomination, const CBigNum& bnSerial, const CBigNum& bnRandomness);
+  
+    CBigNum CoinFromSeed(const uint512& seedZerocoin);
+  
+    const PublicCoin& getPublicCoin() const { return this->publicCoin; }
   // @return the coins serial number
   const CBigNum& getSerialNumber() const { return this->serialNumber; }
   const CBigNum& getRandomness() const { return this->randomness; }
+  void getRandomnessBits(std::vector<int> &randomness_bits) const
+    {
+        randomness_bits.resize(ZKP_SERIALSIZE);
+        std::string bin_string = this->randomness.ToString(2);
+        unsigned int len = bin_string.length();
+        for(unsigned int i=0; i<len; i++)
+            randomness_bits[len-1-i] = (int)bin_string[i]-'0';
+        for(unsigned int i=len; i<ZKP_SERIALSIZE; i++)
+            randomness_bits[i] = 0;
+    }
+  
   const uint8_t& getVersion() const { return this->version; }
   const CSecretKey& getPrivKey() const { return this->privkey; }
   CPubKey getPubKey() const;
@@ -61,16 +72,14 @@ class PrivateCoin {
 
   ADD_SERIALIZE_METHODS
   template <typename Stream, typename Operation> inline void SerializationOp(Stream& s, Operation ser_action) {
-    READWRITE(publicCoin);
-    READWRITE(randomness);
-    READWRITE(serialNumber);
-
-    // NEW
-    READWRITE(version);
-    READWRITE(privkey);
+      READWRITE(version);
+      READWRITE(publicCoin);
+      READWRITE(randomness);
+      READWRITE(serialNumber);
+      READWRITE(privkey);
   }
 
-  static int const PRIVATECOIN_VERSION = 1;
+  static int const CURRENT_VERSION = 2;
 
  private:
   const ZerocoinParams* params;

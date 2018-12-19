@@ -408,3 +408,6 @@ inline bool operator>(const CBigNum& a, const CBigNum& b) { return (mpz_cmp(a.bn
 inline std::ostream& operator<<(std::ostream& strm, const CBigNum& b) { return strm << b.ToString(10); }
 
 using Bignum = CBigNum;
+
+typedef std::vector<CBigNum> CBN_vector;
+typedef std::vector<CBN_vector> CBN_matrix;

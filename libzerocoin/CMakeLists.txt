@@ -13,6 +13,7 @@ endif()
 
 add_subdirectory(matrix)
 
+file(GLOB ZEROCOIN_HEADERS *.h)
 #
 # List of source files to compile
 #
@@ -28,6 +29,11 @@ list(APPEND zerocoin_sources
   SerialNumberSignatureOfKnowledge.cpp
   AccumulatorProofOfKnowledge.cpp
   IntegerMod.cpp
+  Bulletproofs.cpp
+  ArithmeticCircuit.cpp
+  SerialNumberSoK_small.cpp
+  PolynomialCommitment.cpp
+  ParamGeneration.cpp
 )
 
 add_library(zerocoin ${ZEROCOIN_HEADERS} ${zerocoin_sources})

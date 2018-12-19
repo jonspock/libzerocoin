@@ -10,6 +10,7 @@
 #include "AccumulatorAndProofParams.h"
 #include "ModulusType.h"
 #include "ParamGeneration.h"
+#include "ArithmeticCircuit.h"
 
 namespace libzerocoin {
 
@@ -29,6 +30,8 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
   //-------------------------
 
   this->coinCommitmentGroup.modulus = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
+
+  /*  
   this->coinCommitmentGroup.groupOrder.SetHex("a33a39fceb03fef51aa5f50322b557664a8364d7ad0ada150487fae8576af9e3");
 
   this->coinCommitmentGroup.g.SetHex(
@@ -39,12 +42,12 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
       "ccbbdd469de23cfba19728b625ee7b197b60389eebb7383ec63184fe6ddc94acf0e6e68eb49523acff5e4d0c6fd20b744df744c1a7b55414"
       "0d110e6398040425790fe3b9b32e87238f0338c4f52e3f9b84bef7bceace17f26ada12fa5e1ca0d992b79599f0ef29b66c323b88c1471d93"
       "67f991604a97414f99f748ead3d38622");
-
+  */
   //-------------------------
 
   this->serialNumberSoKCommitmentGroup.groupOrder = IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_GROUP>::getModulus();
   this->serialNumberSoKCommitmentGroup.modulus = IntegerModModulus<SERIAL_NUMBER_SOK_COMMITMENT_MODULUS>::getModulus();
-
+  /*
   this->serialNumberSoKCommitmentGroup.g.SetHex(
       "755af74f335a187e660d329f9ff1f2186b8e087797b3043ce17dd4fe734359fa17d5aa2e4190afee489b0a1fee25c9fc08836cb658bdeb7e"
       "fe63fc75e67e3dc3514b2bed4685f82ed104c7ad7c19d171e8dbd589d4c8888e70eec79c5a2d72e6346c91d17e7af34482a5d446423059db"
@@ -54,7 +57,7 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
       "5e257cc3861dfbbd85a95f16fdc867780188c0bc469a7744871f9fa79cfb942d3eb60642736d3e6db940f69fd05d19d57a2b1aa686ad8d26"
       "95b39fef8a4c6c92c99636a6172e5b2b9df49e113508185d15b18158f05d63fa4d6819c126f9065b01183043a17022f6c583735797f3e72c"
       "3c9c2485327127158e4cf0eb23391d739");
-
+  */
   //-------------------------
 
   this->accumulatorParams.accumulatorPoKCommitmentGroup.groupOrder =
@@ -62,6 +65,7 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
   this->accumulatorParams.accumulatorPoKCommitmentGroup.modulus =
       IntegerModModulus<ACCUMULATOR_POK_COMMITMENT_MODULUS>::getModulus();
 
+  /*
   this->accumulatorParams.accumulatorPoKCommitmentGroup.g.SetHex(
       "1d5868e648ac6d41756e0409a510ff5a54bf1ebad22904ab359af54bb0d20a599324cba5ef004d7837cfa6b5904dbc221de6332101df5ef8"
       "d99992e8d5679969cc3221c0ba7");
@@ -86,6 +90,7 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
       "2591bbdc2d4dc6a4fae0390757f128ee320bd7cb51f50ed0f64721fe11b116f00234ec807f56a85ce1649a6026eb9179e97d00323cf6a210"
       "9e6a4b6d60b38a4f36744e2884442a62b48fd395dce9b6f7b5c564c6ef47d802");
 
+  */
   this->accumulatorParams.accumulatorBase = CBigNum(961);
 
   this->accumulatorParams.minCoinValue.SetHex(
@@ -94,6 +99,41 @@ ZerocoinParams::ZerocoinParams(uint32_t securityLevel) {
 
   this->accumulatorParams.maxCoinValue = IntegerModModulus<COIN_COMMITMENT_MODULUS>::getModulus();
 
+  // Generate the parameters
+  CBigNum N;
+  N.SetDec("25195908475657893494027183240048398571429282126204032027777137836043662020707595556264018525880784"
+            "4069182906412495150821892985591491761845028084891200728449926873928072877767359714183472702618963750149718246911"
+            "6507761337985909570009733045974880842840179742910064245869181719511874612151517265463228221686998754918242243363"
+            "7259085141865462043576798423387184774447920739934236584823824281198163815010674810451660377306056201619676256133"
+            "8441436038339044149526344321901146575444541784240209246165157233507787077498171257724679629263863563732899121548"
+            "31438167899885040445364023527381951378636564391212010397122822120720357");
+  
+  CalculateParams(*this, N, ZEROCOIN_PROTOCOL_VERSION, securityLevel);
+
+
+
+  ArithmeticCircuit::setPreConstraints(this, ZKP_wA, ZKP_wB, ZKP_wC, ZKP_K);
+  ArithmeticCircuit::set_s_poly(this, S_POLY_A1, S_POLY_A2, S_POLY_B1, S_POLY_B2, S_POLY_C1, S_POLY_C2);
+
+  
+#ifdef TEMP
+  //  uint256 seed = calculateSeed(this->serialNumberSoKCommitmentGroup.groupOrder, "", 128, "");
+  uint256 seed = calculateSeed(this->coinCommitmentGroup.groupOrder, "", 128, "");
+  uint256 pSeed = calculateHash(seed);
+  uint256 qSeed = calculateHash(pSeed);
+  
+  // Calculate the generators gis[0] = g, ..., gis[ZKP_N+ZKP_PADS-1] (subsequents have index 3...513)
+  this->serialNumberSoKCommitmentGroup.gis.resize(ZKP_N+ZKP_PADS);
+  this->serialNumberSoKCommitmentGroup.gis[0] =  this->serialNumberSoKCommitmentGroup.g;
+  for(unsigned int i=1; i<ZKP_N+ZKP_PADS; i++)
+    this->serialNumberSoKCommitmentGroup.gis[i] = calculateGroupGenerator(seed, pSeed, qSeed, this->serialNumberSoKCommitmentGroup.modulus,
+                                                                          this->serialNumberSoKCommitmentGroup.groupOrder, i+2);
+  
+  // Calculate the generator u_inner_prod (with index 514)
+  this->serialNumberSoKCommitmentGroup.u_inner_prod = calculateGroupGenerator(seed, pSeed, qSeed, this->serialNumberSoKCommitmentGroup.modulus,
+                                                                              this->serialNumberSoKCommitmentGroup.groupOrder, ZKP_N+ZKP_PADS+2);
+#endif
+  
   this->accumulatorParams.initialized = true;
   this->initialized = true;
 }

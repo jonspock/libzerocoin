@@ -13,6 +13,8 @@
 // Copyright (c) 2018 Jon Spock
 #pragma once
 
+#include <stdexcept>
+
 #define ZEROCOIN_DEFAULT_SECURITYLEVEL 80
 #define ZEROCOIN_MIN_SECURITY_LEVEL 80
 #define ZEROCOIN_MAX_SECURITY_LEVEL 80
@@ -25,3 +27,29 @@
 #define ZEROCOIN_COMMITMENT_EQUALITY_PROOF "COMMITMENT_EQUALITY_PROOF"
 #define ZEROCOIN_ACCUMULATOR_PROOF "ACCUMULATOR_PROOF"
 #define ZEROCOIN_SERIALNUMBER_PROOF "SERIALNUMBER_PROOF"
+
+#define MAX_GENERATOR_ATTEMPTS 10000
+
+/** Parameters used in the new protocol.
+ *  !TODO: move where appropriate
+ */
+#include "bignum.h"
+
+typedef std::vector<CBigNum> CBN_vector;
+typedef std::vector<CBN_vector> CBN_matrix;
+
+struct preChallengeShifts {
+    CBN_vector nAks, pAks;
+    CBN_vector nBks, pBks;
+    CBN_vector nzks, pzks;
+};
+
+const int ZKP_M = 2;
+const int ZKP_N = 512;
+const int ZKP_M1DASH = 3;
+const int ZKP_M2DASH = 5;
+const int ZKP_NDASH = 2;
+const int ZKP_PADS = 0;
+const std::vector<int> ZKP_MS = {2,2,2,2,2,2,2,2,2};
+const int ZKP_SERIALSIZE = 256;
+

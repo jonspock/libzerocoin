@@ -17,6 +17,9 @@
 #include "util.h"
 
 namespace libzerocoin {
+
+ bool IsValidSerial(const ZerocoinParams* params, const CBigNum& bnSerial);
+  
 /** A Public coin is the part of a coin that is published to the network and what is handled
  * by other clients. It contains only the value of commitment to a serial number and the
  * denomination of the coin.

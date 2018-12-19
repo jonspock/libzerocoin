@@ -7,13 +7,12 @@
 ///
 /// \copyright  Copyright 2013 Ian Miers, Christina Garman and Matthew Green
 /// \license    This project is released under the MIT license.
-// Copyright (c) 2017 The PIVX developer
-// Copyright (c) 2018 Jon Spock
+// Copyright (c) 2017 The PIVX developers
 
 #ifndef PARAMGENERATION_H_
 #define PARAMGENERATION_H_
 
-#include "ZerocoinParams.h"
+#include "Params.h"
 
 namespace libzerocoin {
 
@@ -42,9 +41,8 @@ uint256 calculateGeneratorSeed(uint256 seed, uint256 pSeed, uint256 qSeed, std::
 uint256 calculateHash(uint256 input);
 IntegerGroupParams deriveIntegerGroupParams(uint256 seed, uint32_t pLen, uint32_t qLen);
 IntegerGroupParams deriveIntegerGroupFromOrder(CBigNum &groupOrder);
-void calculateGroupModulusAndOrder(uint256 seed, uint32_t pLen, uint32_t qLen,
-        CBigNum *resultModulus, CBigNum *resultGroupOrder,
-        uint256 *resultPseed, uint256 *resultQseed);
+void calculateGroupModulusAndOrder(uint256 seed, uint32_t pLen, uint32_t qLen, CBigNum *resultModulus,
+                                   CBigNum *resultGroupOrder, uint256 *resultPseed, uint256 *resultQseed);
 CBigNum calculateGroupGenerator(uint256 seed, uint256 pSeed, uint256 qSeed, CBigNum modulus, CBigNum groupOrder,
                                 uint32_t index);
 CBigNum generateRandomPrime(uint32_t primeBitLen, uint256 in_seed, uint256 *out_seed, uint32_t *prime_gen_counter);

@@ -65,6 +65,7 @@ SET(ARITH
 	./external/arith_uint256.cpp
 	./external/uint256.cpp
 	./external/sha256.cpp
+	./external/sha512.cpp
 
 	./external/key.cpp
   ./support/cleanse.cpp

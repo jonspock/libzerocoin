@@ -24,8 +24,9 @@ class IntegerGroupParams {
    *
    * Allocates an empty (uninitialized) set of parameters.
    **/
-  IntegerGroupParams() { this->initialized = false; }
+  IntegerGroupParams(): gis(ZKP_N+ZKP_PADS) { this->initialized = false; }
 
+  CBigNum randomElement() const;
   bool initialized;
 
   /**
@@ -40,7 +41,9 @@ class IntegerGroupParams {
    */
   CBigNum h;
 
-  CBigNum g1, g2, g3, g4, g5, g6, g7, g8, g9, ga, gb;
+  // NEW
+  CBigNum u_inner_prod;
+  CBN_vector gis;
 
   /**
    * The modulus for the group.
@@ -59,6 +62,8 @@ class IntegerGroupParams {
     READWRITE(h);
     READWRITE(modulus);
     READWRITE(groupOrder);
+    READWRITE(u_inner_prod);
+    READWRITE(gis);
   }
 };
 

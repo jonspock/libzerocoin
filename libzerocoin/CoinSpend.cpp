@@ -85,7 +85,7 @@ CoinSpend::CoinSpend(const ZerocoinParams* p, const PrivateCoin& coin, Accumulat
   // 4. Proves that the coin is correct w.r.t. serial number and hidden coin secret
   // (This proof is bound to the coin 'metadata', i.e., transaction hash)
   uint256 hashSig = signatureHash();  // used twice
-  this->serialNumberSoK = SerialNumberSignatureOfKnowledge(p, coin, fullCommitmentToCoinUnderSerialParams, hashSig);
+  this->serialNumberSoK = SerialNumberSoK_small(p, coin, fullCommitmentToCoinUnderSerialParams, hashSig);
 
   // 5. Sign the transaction using the private key associated with the serial number
   this->pubkey = coin.getPubKey();
@@ -93,13 +93,37 @@ CoinSpend::CoinSpend(const ZerocoinParams* p, const PrivateCoin& coin, Accumulat
 }
 
 bool CoinSpend::Verify(const Accumulator& a) const {
-  // Verify both of the sub-proofs using the given meta-data
-  return (a.getDenomination() == this->denomination) &&
-         commitmentPoK.Verify(serialCommitmentToCoinValue, accCommitmentToCoinValue) &&
-         accumulatorPoK.Verify(a, accCommitmentToCoinValue) &&
-         serialNumberSoK.Verify(coinSerialNumber, serialCommitmentToCoinValue, signatureHash());
-}
+  // Double check that the version is the same as marked in the serial
+  if (a.getDenomination() != this->denomination) {
+    throw std::runtime_error("CoinsSpend::Verify: failed, denominations do not match");
+    return false;
+  }
 
+  // Verify both of the sub-proofs using the given meta-data
+  if (!commitmentPoK.Verify(serialCommitmentToCoinValue, accCommitmentToCoinValue)) {
+    throw std::runtime_error("CoinsSpend::Verify: commitmentPoK failed");
+    return false;
+  }
+  
+  if (!accumulatorPoK.Verify(a, accCommitmentToCoinValue)) {
+    throw std::runtime_error("CoinsSpend::Verify: accumulatorPoK failed");
+    return false;
+  }
+  if (!serialNumberSoK.Verify(coinSerialNumber, serialCommitmentToCoinValue, signatureHash())) {
+    throw std::runtime_error("CoinsSpend::Verify: serialNumberSoK failed. sighash:");
+    //strError += signatureHash().GetHex();
+    return false;
+  }
+  
+  if (!serialNumberSoK.Verify(coinSerialNumber, serialCommitmentToCoinValue, signatureHash())) {
+    std::cout << "CoinsSpend::Verify: serialNumberSoK_small failed. sighash:";
+    throw std::runtime_error("CoinsSpend::Verify: serialNumberSoK_small failed. sighash:");
+    //strError += signatureHash().GetHex();
+    return false;
+  }
+
+  return true;
+}
 const uint256 CoinSpend::signatureHash() const {
   CHashWriter h;
   h << serialCommitmentToCoinValue << accCommitmentToCoinValue << commitmentPoK << accumulatorPoK << ptxHash

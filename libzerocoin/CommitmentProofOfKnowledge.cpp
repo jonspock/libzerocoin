@@ -20,11 +20,11 @@
 #include <iostream>
 namespace libzerocoin {
 // CommitmentProofOfKnowledge class
-CommitmentProofOfKnowledge::CommitmentProofOfKnowledge(const SerialNumberGroupParams* ap, const IntegerGroupParams* bp)
+CommitmentProofOfKnowledge::CommitmentProofOfKnowledge(const IntegerGroupParams* ap, const IntegerGroupParams* bp)
     : ap(ap), bp(bp) {}
 
 // TODO: get parameters from the commitment group
-CommitmentProofOfKnowledge::CommitmentProofOfKnowledge(const SerialNumberGroupParams* aParams,
+CommitmentProofOfKnowledge::CommitmentProofOfKnowledge(const IntegerGroupParams* aParams,
                                                        const IntegerGroupParams* bParams, const Commitment& a,
                                                        const Commitment& b)
     : ap(aParams), bp(bParams) {

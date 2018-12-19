@@ -20,6 +20,10 @@ class SerialNumberGroupParams {
   /// The order of the group
   CBigNum groupOrder;
 
+  // NEW
+  CBigNum u_inner_prod;
+  CBN_vector gis;
+
   SerialNumberGroupParams() = default;
 
   ADD_SERIALIZE_METHODS
@@ -29,6 +33,10 @@ class SerialNumberGroupParams {
     READWRITE(h);
     READWRITE(modulus);
     READWRITE(groupOrder);
+
+    READWRITE(u_inner_prod);
+    READWRITE(gis);
+    
   }
 };
 
